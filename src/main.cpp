@@ -8,9 +8,8 @@
 /***************************** Defines *****************************/
 #define NUM_CORES       2       /* numero de cores */
 #define uS_TO_S_FACTOR  1000000 /* Conversion factor for micro seconds to seconds */
-#define TIME_TO_SLEEP   10      /* Time ESP32 will go to sleep (in seconds) */
-
-//#define DEEPSLEEP_RESET 5       /* Reincio por despertar de deep sleep */
+#define TIME_TO_SLEEP   30      /* Time ESP32 will go to sleep (in seconds) */
+//#define DEEPSLEEP_RESET 5     /* Reincio por despertar de deep sleep */
 /***************************** Defines *****************************/
 
 /***************************** Includes *****************************/
@@ -29,10 +28,6 @@ typedef enum  {
   SOFTRESET,
   DESPERTAR
 } tipoReset_t;
-
-typedef struct {
-  String nombre_dispositivo;    
-} configuracion_t;
 /*************************** Tipos *******************************/
 
 /*************************** Prototipos *******************************/
@@ -43,14 +38,17 @@ const char* reset_reason(RESET_REASON reason);
 
 void setupTotal(void);
 void setupDespertar(void);
-void cargarConfigNVR(void);
-void salvarConfigNVR(void);
+
+//void cargarConfigNVR(void);
+//void salvarConfigNVR(void);
 /*************************** Prototipos *******************************/
 
 /***************************** variables globales *****************************/
-String nombre_dispositivo;//Nombre del dispositivo, por defecto el de la familia
+//RTC_DATA_ATTR String nombre_dispositivo;//Nombre del dispositivo, por defecto el de la familia
+int debugGlobal; //por defecto desabilitado
 
-RTC_DATA_ATTR int bootCount = 0; //RTC_DATA_ATTR memoria que se mantiene activa durante un deep_sleep
+RTC_DATA_ATTR int bootCount; //RTC_DATA_ATTR memoria que se mantiene activa durante un deep_sleep
+RTC_DATA_ATTR datos_t datos[MAX_DATOS];
 RTC_DATA_ATTR configuracion_t configuracion;
 /***************************** variables globales *****************************/
 
@@ -58,7 +56,7 @@ void setup() {
   //Init serial, lo unico que hago fuera de los tipos de setup
   Serial.begin(115200);  
 
-  Serial.printf("milis init: %lu\n",millis());
+  Serial.printf("milis init: %lu\nNombre dispositivo: %s\n",millis(),configuracion.nombre_dispositivo.c_str());
 
   //1.-Despierta
   //**********************************
@@ -101,14 +99,14 @@ void setup() {
 
   //4.-comunica
   Serial.printf("%s\n",cad.c_str());
-
+  Lora.envia(cad);
   //5.-procesa respuesta
   //To Do....
 
   //6.-duerme
   //Si no esta conectado por puerto serie, se duerme
   if(!Serial || 1){
-    salvarConfigNVR();
+    //salvarConfigNVR();
     Serial.printf("milis fin: %lu\n",millis());
     esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
     delay(100);
@@ -136,23 +134,29 @@ void setupTotal(void){
   //Init metro
   sensores.inicializa(false);
   //init Lora
-  initLora();
+  Lora.inicializa();
 
-  salvarConfigNVR();
+  //salvarConfigNVR();
   bootCount=0;
 }  
   
 void setupDespertar(void){
-  cargarConfigNVR();
+  //cargarConfigNVR();
   //init Lora
+  Lora.inicializa();
 }
-
+/*
 void cargarConfigNVR(void){
-  nombre_dispositivo=configuracion.nombre_dispositivo;
+  Serial.printf("Recuperando configuracion:\n");
+  Serial.printf("Nombre de dispositivo: %s\n",configuracion.nombre_dispositivo.c_str());
+  //nombre_dispositivo=configuracion.nombre_dispositivo;
 }
 void salvarConfigNVR(void){
   configuracion.nombre_dispositivo=nombre_dispositivo;
+  Serial.printf("Salvando configuracion:\n");
+  Serial.printf("Nombre de dispositivo: %s\n",configuracion.nombre_dispositivo.c_str());
 }
+*/
 /********************************** Fin SETUPs ********************************************/
 /********************************** Funciones de configuracion global **************************************/
 /************************************************/
@@ -165,7 +169,7 @@ boolean inicializaConfiguracion(boolean debug)
   if (debug) Traza.mensaje("Recupero configuracion de archivo...\n");
 
   //cargo el valores por defecto
-  nombre_dispositivo=String(NOMBRE_FAMILIA); //Nombre del dispositivo, por defecto el de la familia
+  configuracion.nombre_dispositivo=String(NOMBRE_FAMILIA); //Nombre del dispositivo, por defecto el de la familia
   
   if(!leeFichero(GLOBAL_CONFIG_FILE, cad))
     {
@@ -195,10 +199,10 @@ boolean parseaConfiguracionGlobal(String contenido)
     {
     Traza.mensaje("parsed json\n");
 //******************************Parte especifica del json a leer********************************
-    if (json.containsKey("nombre_dispositivo")) nombre_dispositivo=((const char *)json["nombre_dispositivo"]);    
-    if(nombre_dispositivo==NULL) nombre_dispositivo=String(NOMBRE_FAMILIA);
+    if (json.containsKey("nombre_dispositivo")) configuracion.nombre_dispositivo=((const char *)json["nombre_dispositivo"]);    
+    if(configuracion.nombre_dispositivo==NULL) configuracion.nombre_dispositivo=String(NOMBRE_FAMILIA);
     
-    Traza.mensaje("Configuracion leida:\nNombre dispositivo: %s\n",nombre_dispositivo.c_str());
+    Traza.mensaje("Configuracion leida:\nNombre dispositivo: %s\n",configuracion.nombre_dispositivo.c_str());
 //************************************************************************************************
     return true;
     }

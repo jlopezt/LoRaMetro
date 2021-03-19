@@ -341,7 +341,8 @@ String Sensores::generaJsonEstado(void) {
   
   //genero el json con las medidas--> {"id": 1, "temperatura": 22.5, "Humedad": 63, "Luz": 12, "Presion": 1036.2, "Altitud": 645.2}
   cad = "{\"titulo\": \"";
-  cad += String(nombre_dispositivo);
+  cad += configuracion.nombre_dispositivo;
+  //cad += getNombre_dispositivo();
   cad += "\"";
   cad += ",\"Temperatura\": ";
   cad += String(getTemperatura(),1);

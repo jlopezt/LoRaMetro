@@ -2,31 +2,11 @@
 https://www.thethingsnetwork.org/forum/t/overview-of-lorawan-libraries-howto/24692
 https://github.com/Lora-net/LoRaMac-node
 */
-#include <Arduino.h>
-#include <lmic.h>
-#include <hal/hal.h>
-//#include <SPI.h>
+#include <LoRa.h>
 
-#define BAND    868E6  //you can set band here directly,e.g. 433E6,868E6,915E6
+EmisorLora Lora;
 
-// LoRaWAN NwkSKey, network session key
-// This is the default Semtech key, which is used by the early prototype TTN
-// network.
-//static const PROGMEM u1_t NWKSKEY[16] = { PASTE_NWKSKEY_KEY_HERE };
-static const PROGMEM u1_t NWKSKEY[16] = { 0x6D, 0x0A, 0x35, 0x75, 0xE2, 0xEF, 0x8F, 0x3D, 0xF9, 0xF1, 0x1E, 0x6E, 0x6D, 0x42, 0x28, 0x6E };
-
-// LoRaWAN AppSKey, application session key
-// This is the default Semtech key, which is used by the early prototype TTN
-// network.
-//static const u1_t PROGMEM APPSKEY[16] = { PASTE_APPSKEY_KEY_HERE };
-static const u1_t PROGMEM APPSKEY[16] = { 0xEB, 0x35, 0x7B, 0x33, 0xC9, 0x07, 0xA1, 0x29, 0x57, 0x35, 0x2C, 0x92, 0x73, 0x3E, 0x00, 0x6D };
-
-// LoRaWAN end-device address (DevAddr)
-//static const u4_t DEVADDR = 0xPASTE_DEV_ADDR_HERE;
-//static const u4_t DEVADDR = 0x2601361F ; // <-- Change this address for every node!
-static const u4_t DEVADDR = 637613599; // <-- Change this address for every node!
-
-static osjob_t sendjob;
+//static osjob_t sendjob;
 
 // Pin mapping for the SparkX ESP32 LoRa 1-CH Gateway
 const lmic_pinmap lmic_pins = {
@@ -36,19 +16,15 @@ const lmic_pinmap lmic_pins = {
  .dio = {26, 35, 33},
 };
 
-void do_send(osjob_t* j, uint8_t* data);
+EmisorLora::EmisorLora(void){};
 
 //Init LoRa
-void initLora(void){  
+void EmisorLora::inicializa(void){  
   // LMIC init
   os_init();
   // Reset the MAC state. Session and pending data transfers will be discarded.
   LMIC_reset();
 
-  // Set static session parameters. Instead of dynamically establishing a session
-  // by joining the network, precomputed session parameters are be provided.
-  uint8_t appskey[sizeof(APPSKEY)];
-  uint8_t nwkskey[sizeof(NWKSKEY)];
   memcpy_P(appskey, APPSKEY, sizeof(APPSKEY));
   memcpy_P(nwkskey, NWKSKEY, sizeof(NWKSKEY));
   LMIC_setSession (0x1, DEVADDR, nwkskey, appskey);
@@ -66,10 +42,37 @@ void initLora(void){
 
   // Set data rate and transmit power for uplink (note: txpow seems to be ignored by the library)
   LMIC_setDrTxpow(DR_SF7, 14);
-
-  // Start job -- Transmit a message on begin
-  //do_send(&sendjob,"inicio");
 }
+
+uint16_t EmisorLora::setMensaje(String m){
+  mensaje=m;
+  return mensaje.length();
+}
+
+//Envia los datos pasado
+lmic_tx_error_t EmisorLora::envia(String msg) {
+  setMensaje(msg);
+  return envia();
+}
+// Envia los datos cargados
+lmic_tx_error_t EmisorLora::envia(void) {//osjob_t* j) {
+  /*
+  // comprueba que no hay otro envio en curso
+  if (LMIC.opmode & OP_TXRXPEND) Serial.println(F("OP_TXRXPEND, not sending"));
+  else {
+    // Prepare upstream data transmission at the next possible time.
+    LMIC_setTxData2(1, data, sizeof(data) - 1, 0);
+    Serial.printf("enviado: #%s#\n", data);
+  }
+  */
+ return LMIC_setTxData2(1, (xref2u1_t)mensaje.c_str(), mensaje.length() - 1, 0);
+}
+ 
+/************************** callbacks **********************************/
+//Necesario declararlas
+void os_getArtEui (u1_t* buf) { }
+void os_getDevEui (u1_t* buf) { }
+void os_getDevKey (u1_t* buf) { }
 
 // State machine event handler
 void onEvent (ev_t ev) {
@@ -152,17 +155,3 @@ void onEvent (ev_t ev) {
         break;
   }
 }
-
-// Transmit data from mydata
-void do_send(osjob_t* j, uint8_t* data) {
-  // Check if there is not a current TX/RX job running
-  if (LMIC.opmode & OP_TXRXPEND) {
-    Serial.println(F("OP_TXRXPEND, not sending"));
-  } else {
-    digitalWrite(LED_BUILTIN, HIGH); // Turn on LED while sending
-    // Prepare upstream data transmission at the next possible time.
-    LMIC_setTxData2(1, data, sizeof(data) - 1, 0);
-    Serial.println(F("Packet queued"));
-  }
-}
-
