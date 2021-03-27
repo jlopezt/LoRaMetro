@@ -24,7 +24,7 @@
 /***************************** Includes *****************************/
 #include <Global.h>
 #include <Sensores.h>
-#include <Ficheros.h>
+#include <Configuracion.h>
 /***************************** Includes *****************************/
 
 /******************* Variables ***********************/
@@ -58,38 +58,13 @@ Sensores::Sensores(uint8_t _dth_pin, uint8_t _one_wire_pin):
 /******************* Variables ***********************/
 
 boolean Sensores::inicializa(boolean configFichero) {
-/*
-  //recupero datos del fichero de configuracion
-  String cad="";
-  if (configFichero){
-     Serial.println("Recupero configuracion de archivo...");
-  
-    if(leeFichero(SENSORES_CONFIG_FILE, cad)){
-      if (!parseaConfiguracion(cad)) {
-        //Algo salio mal, confgiguracion por defecto
-        Serial.printf("No existe fichero de configuracion de Sensores o esta corrupto\n");
-        return false;
-      }
-    }
-    else{
-      Serial.printf("No existe fichero de configuracion de Sensores o esta corrupto\n");
-      return false;
-    }
-  }
-
-  //Cargo en las variable locales con lo leido del fichero en el primer aranque
-
-  tipoSensorTemperatura=String(configuracion.tipoSensorTemperatura);
-  tipoSensorHumedad=String(configuracion.tipoSensorHumedad);
-  tipoSensorPresion=String(configuracion.tipoSensorPresion);
-  tipoSensorLuz=String(configuracion.tipoSensorLuz);
-  */
+  //Cargo los valores de la memoria persistente
   tipoSensorTemperatura=configuracion.getTipoSensorTemperatura();
   tipoSensorHumedad=configuracion.getTipoSensorHumedad();
   tipoSensorPresion=configuracion.getTipoSensorPresion();
   tipoSensorLuz=configuracion.getTipoSensorLuz();
 
-  //Inicializo los sensores ¿TODOS?
+  //Inicializo los sensores
   //Temperatura
   Serial.printf("Inicializa temperatura...\n");
   if(tipoSensorTemperatura==TIPO_NULO);
@@ -119,60 +94,10 @@ boolean Sensores::inicializa(boolean configFichero) {
   return true;
 }
     
-/*********************************************/
-/* Parsea el json leido del fichero de       */
-/* configuracio de sensores                  */
-/*********************************************
-boolean Sensores::parseaConfiguracion(String contenido)
-  {  
-  DynamicJsonBuffer jsonBuffer;
-  JsonObject& json = jsonBuffer.parseObject(contenido.c_str());
-  //json.printTo(Serial);
-  if (json.success()) 
-    {
-    Serial.println("parsed json");
-    String cad="";
-// ******************************Parte especifica del json a leer********************************
-    if (json.containsKey("tipoSensorTemperatura")){
-      Serial.println("Temperatura\n");
-      cad=json.get<String>("tipoSensorTemperatura");
-      strncpy(configuracion.tipoSensorTemperatura,cad.c_str(),LONG_TIPO_SENSOR_TEMPERATURA-1);
-    }
-    else configuracion.tipoSensorTemperatura[0]=0;
-
-    if (json.containsKey("tipoSensorHumedad")){
-      Serial.println("Humedad\n");
-      cad=json.get<String>("tipoSensorHumedad");
-      strncpy(configuracion.tipoSensorHumedad,cad.c_str(),LONG_TIPO_SENSOR_HUMEDAD-1);
-    }
-    else configuracion.tipoSensorHumedad[0]=0;
-
-    if (json.containsKey("tipoSensorPresion")){
-      Serial.println("Presion\n");
-      cad=json.get<String>("tipoSensorPresion");
-      strncpy( configuracion.tipoSensorPresion,cad.c_str(),LONG_TIPO_SENSOR_PRESION-1);
-    }
-    else configuracion.tipoSensorPresion[0]=0;
-
-    if (json.containsKey("tipoSensorLuz")){
-      Serial.println("Luz\n");
-      cad=json.get<String>("tipoSensorLuz");
-      strncpy(configuracion.tipoSensorLuz,cad.c_str(),LONG_TIPO_SENSOR_LUZ-1);
-    }
-    else configuracion.tipoSensorLuz[0]=0;
-
-    Serial.printf("Configuracion leida:\ntipo sensor temperatura: %s\ntipo sensor humedad: %s\ntipo sensor luz: %s\ntipo sensor presion: %s\n",tipoSensorTemperatura.c_str(),tipoSensorHumedad.c_str(),tipoSensorLuz.c_str(),tipoSensorPresion.c_str());
-// ************************************************************************************************
-    return true;
-    }
-  return false;
-  }
-*/
 /*********************************************** Lectura de las medidas de los sensores *****************************************************/
-/**************************************/
-/* Lee los sensores                   */
-/* y almnacena el valor leido         */
-/**************************************/
+/***********************************************/
+/* Lee los sensores y almnacena el valor leido */
+/***********************************************/
 void Sensores::lee(void)
   { 
   //Leo los sensores  
@@ -228,62 +153,48 @@ void Sensores::leeTemperaturaDS18B20(void)
 /* Lee el sensor de Tª DTH22          */
 /* y almnacena el valor leido         */
 /**************************************/
-void Sensores::leeTemperaturaDHT22(void)
-  {
+void Sensores::leeTemperaturaDHT22(void){
   float t;
   
   t = dht.readTemperature();  //leo el sensor
   if(!isnan(t)) tempC=t;  //si no es nan lo guardo
-  }
+}
   
 /**************************************/
 /* Lee el sensor de Tª HDC1080        */
 /* y almnacena el valor leido         */
 /**************************************/
-void Sensores::leeTemperaturaHDC1080(void)
-  { 
-  tempC = hdc1080.readTemperature();  
-  }
+void Sensores::leeTemperaturaHDC1080(void){ tempC = hdc1080.readTemperature();}
   
 /**************************************/
 /* Lee el sensor de Tª BME280         */
 /* y almnacena el valor leido         */
 /**************************************/
-void Sensores::leeTemperaturaBME280(void)
-  { 
-  tempC = bme280.readTemperature();  
-  }
+void Sensores::leeTemperaturaBME280(void){tempC = bme280.readTemperature();}
 
 /**************************************/
 /* Lee el sensor de Humedad           */
 /* y almnacena el valor leido         */
 /**************************************/
-void Sensores::leeHumedadDHT22(void)
-  { 
+void Sensores::leeHumedadDHT22(void){ 
   // Lee el valor desde el sensor
   float h;
   
   h = dht.readHumidity();  //leo el sensor
   if(!isnan(h)) humedad=h;  //si no es nan lo guardo
-  }
+}
 
 /**************************************/
 /* Lee el sensor de Humedad HDC1080   */
 /* y almnacena el valor leido         */
 /**************************************/
-void Sensores::leeHumedadHDC1080(void)
-  { 
-  humedad = hdc1080.readHumidity();
-  }
+void Sensores::leeHumedadHDC1080(void){humedad = hdc1080.readHumidity();}
 
 /**************************************/
 /* Lee el sensor de Humedad BME280    */
 /* y almnacena el valor leido         */
 /**************************************/
-void Sensores::leeHumedadBME280(void)
-  { 
-  humedad = bme280.readHumidity();
-  }
+void Sensores::leeHumedadBME280(void){humedad = bme280.readHumidity();}
 
 /**************************************/
 /* Lee el sensor de luz GL5539        */
@@ -291,11 +202,10 @@ void Sensores::leeHumedadBME280(void)
 /* valor entre 0 y 100.               */
 /* 100 luz intensa 0 oscuridad        */
 /**************************************/
-void Sensores::leeLuzGL5539(void)
-  { 
+void Sensores::leeLuzGL5539(void){ 
   // Lee el valor desde el sensor
   luz=(analogRead(LDR_PIN)*100/1024);//valor entre 0 y 100. 100 luz intensa 0 oscuridad
-  }
+}
   
 /*****************************************/
 /* Lee el sensor de luz GY-302 - BH1750 */
@@ -303,23 +213,21 @@ void Sensores::leeLuzGL5539(void)
 /* valor entre 0 y 100.                 */
 /* 100 luz intensa 0 oscuridad          */
 /****************************************/
-void Sensores::leeLuzBH1750(void)
-  { 
+void Sensores::leeLuzBH1750(void){ 
   // Lee el valor desde el sensor
   luz = bh1750.readLightLevel()*100.0/BH1750_FONDO_ESCALA;//fondo de escala tomo BH1750_FONDO_ESCALA, es aun mayor pero eso es mucha luz. responde entre 0 y 100
   if(luz>100) luz=100; //si es mayor topo 100
   //valor entre 0 y 100. 100 luz intensa 0 oscuridad
-  }
+}
 
 /**************************************/
 /* Lee el sensor de Presion BME280    */
 /* y almnacena el valor leido         */
 /**************************************/
-void Sensores::leePresionBME280(void)
-  { 
+void Sensores::leePresionBME280(void){ 
   presion = bme280.readPressure()/100.0;
   altitud = bme280.readAltitude(SEALEVELPRESSURE_HPA);
-  }
+}
 /********************************* Fin funciones de lectura *********************************/
 /********************************* funciones get *********************************/
 /**************************************/
@@ -403,7 +311,7 @@ String Sensores::generaJsonEstado(void) {
   
   //genero el json con las medidas--> {"id": 1, "temperatura": 22.5, "Humedad": 63, "Luz": 12, "Presion": 1036.2, "Altitud": 645.2}
   cad = "{\"titulo\": \"";
-  cad += String(configuracion.getNombre_dispositivo());
+  cad += String(configuracion.getNombreDispositivo());
   cad += "\"";
   cad += ",\"Temperatura\": ";
   cad += String(promediaTemperatura(),1);

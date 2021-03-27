@@ -4,7 +4,6 @@
 
 /***************************** Includes *****************************/
 #include <Configuracion.h>
-#include <Global.h>
 #include <Ficheros.h>
 /***************************** Includes *****************************/
 
@@ -73,36 +72,36 @@ boolean Configuracion::parseaConfiguracion(String contenido)
     if (json.containsKey("nombre_dispositivo")) strcpy(config.nombre_dispositivo,(const char *)json["nombre_dispositivo"]);
     if(nombre_dispositivo==NULL) strcpy(config.nombre_dispositivo,NOMBRE_FAMILIA);    
     
-    Traza.mensaje("Configuracion leida:\nNombre dispositivo: %s\n",nombre_dispositivo);
+    Traza.mensaje("Configuracion leida:\nNombre dispositivo: %s\n",config.nombre_dispositivo);
 //************************************************************************************************
 
 //******************************Configuracion de sensores********************************
     String cad="";
 
     if (json.containsKey("tipoSensorTemperatura")){
-      Serial.println("Temperatura\n");
       cad=json.get<String>("tipoSensorTemperatura");
+      //Serial.printf("Temperatura: %s\n",cad.c_str());
       strncpy(config.tipoSensorTemperatura,cad.c_str(),LONG_TIPO_SENSOR_TEMPERATURA-1);
     }
     else config.tipoSensorTemperatura[0]=0;
 
     if (json.containsKey("tipoSensorHumedad")){
-      Serial.println("Humedad\n");
       cad=json.get<String>("tipoSensorHumedad");
+      //Serial.printf("Humedad: %s\n",cad.c_str());
       strncpy(config.tipoSensorHumedad,cad.c_str(),LONG_TIPO_SENSOR_HUMEDAD-1);
     }
     else config.tipoSensorHumedad[0]=0;
 
     if (json.containsKey("tipoSensorPresion")){
-      Serial.println("Presion\n");
       cad=json.get<String>("tipoSensorPresion");
+      //Serial.printf("Presion: %s\n",cad.c_str());
       strncpy(config.tipoSensorPresion,cad.c_str(),LONG_TIPO_SENSOR_PRESION-1);
     }
     else config.tipoSensorPresion[0]=0;
 
     if (json.containsKey("tipoSensorLuz")){
-      Serial.println("Luz\n");
       cad=json.get<String>("tipoSensorLuz");
+      //Serial.printf("Luz: %s\n",cad.c_str());
       strncpy(config.tipoSensorLuz,cad.c_str(),LONG_TIPO_SENSOR_LUZ-1);
     }
     else config.tipoSensorLuz[0]=0;
@@ -116,7 +115,7 @@ boolean Configuracion::parseaConfiguracion(String contenido)
   }
 
 /*************************FUNCIONES GET************************************/
-String Configuracion::getNombre_dispositivo(void){
+String Configuracion::getNombreDispositivo(void){
     if(valida) return String(nombre_dispositivo);
     return String("Invalida");
 }

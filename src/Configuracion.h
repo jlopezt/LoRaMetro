@@ -41,7 +41,7 @@ class Configuracion{
         Configuracion(void);
         boolean leeConfiguracion(boolean fichero);
         //metodos get
-        String getNombre_dispositivo(void);
+        String getNombreDispositivo(void);
         String getTipoSensorTemperatura(void);
         String getTipoSensorHumedad(void);
         String getTipoSensorPresion(void);
