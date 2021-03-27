@@ -7,16 +7,21 @@
 
 /***************************** Defines *****************************/
 #define NUM_CORES       2       /* numero de cores */
-#define uS_TO_S_FACTOR  1000000 /* Conversion factor for micro seconds to seconds */
-#define TIME_TO_SLEEP   30      /* Time ESP32 will go to sleep (in seconds) */
-//#define DEEPSLEEP_RESET 5     /* Reincio por despertar de deep sleep */
+#define PIN_DETECTOR   23       /* Pin que determina si arranca en modo cargador o en modo normal */
+#define DETECTOR_ACTIVADO LOW
+#define PARTICION_LOADER  String("app0")
 /***************************** Defines *****************************/
 
 /***************************** Includes *****************************/
 #include <Arduino.h>
+#include <esp_timer.h>
 #include <rom/rtc.h>
 
-#include <Ficheros.h>
+#include <esp_ota_ops.h>
+
+#include <Global.h>
+//#include <Ficheros.h>
+#include <Configuracion.h>
 #include <Ordenes.h>
 #include <Sensores.h>
 #include <LoRa.h>
@@ -39,24 +44,41 @@ const char* reset_reason(RESET_REASON reason);
 void setupTotal(void);
 void setupDespertar(void);
 
-//void cargarConfigNVR(void);
-//void salvarConfigNVR(void);
+void inicializaDetector(boolean debug);
+boolean modoDetector(boolean debug);
+boolean setParticionProximoArranque(String nombre);
 /*************************** Prototipos *******************************/
 
 /***************************** variables globales *****************************/
 //RTC_DATA_ATTR String nombre_dispositivo;//Nombre del dispositivo, por defecto el de la familia
 int debugGlobal; //por defecto desabilitado
 
-RTC_DATA_ATTR int bootCount; //RTC_DATA_ATTR memoria que se mantiene activa durante un deep_sleep
-RTC_DATA_ATTR datos_t datos[MAX_DATOS];
-RTC_DATA_ATTR configuracion_t configuracion;
+const uint64_t uS_TO_S_FACTOR = 1000000; /* Conversion factor for micro seconds to seconds */
+const uint64_t mS_TO_S_FACTOR = 1000;    /* Conversion factor for mili seconds to seconds */
+
+const uint64_t HORAS_EN_DIA = 24;
+const uint64_t SEGUNDOS_EN_HORA = 3600;
+
+const uint64_t AJUSTE_RELOJ = 150000;     /* Una ñapa digna para ajustar el reloj..., en us */
+const uint64_t timeToSleep=((HORAS_EN_DIA * SEGUNDOS_EN_HORA * uS_TO_S_FACTOR)/(LECTURAS_AL_DIA))-AJUSTE_RELOJ;
+
+RTC_DATA_ATTR unsigned int bootCount; //RTC_DATA_ATTR memoria que se mantiene activa durante un deep_sleep
+//RTC_DATA_ATTR struct configuracion_s configuracion;
 /***************************** variables globales *****************************/
 
 void setup() {
   //Init serial, lo unico que hago fuera de los tipos de setup
   Serial.begin(115200);  
-
-  Serial.printf("milis init: %lu\nNombre dispositivo: %s\n",millis(),configuracion.nombre_dispositivo.c_str());
+  inicializaDetector(true);
+  if(modoDetector(true)){
+    Serial.printf("Modo loader activado.\n");
+    if (setParticionProximoArranque(PARTICION_LOADER)) {
+      Serial.printf("Reiniciando.......\n");
+      delay(100);
+      ESP.restart();
+    }
+    else Serial.printf("No se puede activar la particion del loader (%s)\n",PARTICION_LOADER.c_str());
+  }
 
   //1.-Despierta
   //**********************************
@@ -64,10 +86,10 @@ void setup() {
   //**********************************
   tipoReset_t tipoReset=HARDRESET;
   for(int8_t core=0;core<NUM_CORES;core++) {
-    //Traza.mensaje("Motivo del reinicio (%i): %s\n",core,reset_reason(rtc_get_reset_reason(core)));  
+    //Serial.printf("Motivo del reinicio (%i): %s\n",core,reset_reason(rtc_get_reset_reason(core)));  
     if(rtc_get_reset_reason(core)==DEEPSLEEP_RESET) {
       tipoReset=DESPERTAR;
-      core=NUM_CORES;
+      break;
     }
   }
 
@@ -87,30 +109,32 @@ void setup() {
       break;    
   }
   Serial.println("Boot number: " + String(bootCount));
-  delay(2);
 
-
-  Serial.printf("milis mid: %lu\n",millis());
   //2.-mide
-  sensores.lee(false);
+  sensores.lee();
 
-  //3.-procesa la medida
-  String cad=sensores.generaJsonEstado();
+  if(bootCount % LECTURAS_POR_ENVIO==0){
+    bootCount=0;//Aqui es cero porque el siguiente arranque lo pondra a uno. Lo inicializo a 1 en el setupTotal, porque es ya el primer arranque
+    //3.-procesa la medida
+    String cad=sensores.generaJsonEstado();
 
-  //4.-comunica
-  Serial.printf("%s\n",cad.c_str());
-  Lora.envia(cad);
-  //5.-procesa respuesta
-  //To Do....
+    //4.-comunica
+    Serial.printf("%s\n",cad.c_str());
+    Lora.envia(cad);
+
+    //5.-procesa respuesta
+    //To Do....
+  }
+  else{Serial.printf("No hay envio (bootCount: %i | LECTURAS_POR_ENVIO: %i)\n",bootCount,LECTURAS_POR_ENVIO);}
 
   //6.-duerme
   //Si no esta conectado por puerto serie, se duerme
   if(!Serial || 1){
-    //salvarConfigNVR();
-    Serial.printf("milis fin: %lu\n",millis());
-    esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
-    delay(100);
-    esp_deep_sleep_start();
+    //salvarConfigNVR(); 
+    Serial.printf("milis fin: %lu ms\ntimeToSleep: %lld us\ntiempo consumido: %lld us",millis(),timeToSleep,timeToSleep-esp_timer_get_time());    
+
+    esp_deep_sleep(timeToSleep-esp_timer_get_time());
+
     Serial.println("This will never be printed");  
   }
 }
@@ -118,58 +142,53 @@ void setup() {
 void loop() {
   //solo se  ejecuta si no hay conectado algo en el puerto serie
   Serial.printf("tic...");
-  delay(5000);
+  delay(timeToSleep/2000);
   Serial.printf("tac...\n");
-  delay(5000);
+  delay(timeToSleep/2000);
 }
 
 /********************************** SETUPs ********************************************/
 void setupTotal(void){
+  /*
   //Init ficheros
   inicializaFicheros(false);
   //Init general (nombre, tiempos de ivernacion,... )
   inicializaConfiguracion(false);
+  */ 
+  //Init configuracion
+  if(configuracion.leeConfiguracion(true)) Serial.printf("Eureka!");
   //Init Ordenes
   inicializaOrden();
   //Init metro
-  sensores.inicializa(false);
+  sensores.inicializa(true);
   //init Lora
   Lora.inicializa();
 
   //salvarConfigNVR();
-  bootCount=0;
+  bootCount=1;
 }  
   
 void setupDespertar(void){
-  //cargarConfigNVR();
+  //Init configuracion
+  configuracion.leeConfiguracion(false);  
+  //Init metro
+  sensores.inicializa(false);  
   //init Lora
   Lora.inicializa();
 }
-/*
-void cargarConfigNVR(void){
-  Serial.printf("Recuperando configuracion:\n");
-  Serial.printf("Nombre de dispositivo: %s\n",configuracion.nombre_dispositivo.c_str());
-  //nombre_dispositivo=configuracion.nombre_dispositivo;
-}
-void salvarConfigNVR(void){
-  configuracion.nombre_dispositivo=nombre_dispositivo;
-  Serial.printf("Salvando configuracion:\n");
-  Serial.printf("Nombre de dispositivo: %s\n",configuracion.nombre_dispositivo.c_str());
-}
-*/
 /********************************** Fin SETUPs ********************************************/
 /********************************** Funciones de configuracion global **************************************/
 /************************************************/
 /* Recupera los datos de configuracion          */
 /* del archivo global                           */
-/************************************************/
+/************************************************
 boolean inicializaConfiguracion(boolean debug)
   {
   String cad="";
   if (debug) Traza.mensaje("Recupero configuracion de archivo...\n");
 
   //cargo el valores por defecto
-  configuracion.nombre_dispositivo=String(NOMBRE_FAMILIA); //Nombre del dispositivo, por defecto el de la familia
+  strcpy(configuracion.nombre_dispositivo,NOMBRE_FAMILIA); //Nombre del dispositivo, por defecto el de la familia
   
   if(!leeFichero(GLOBAL_CONFIG_FILE, cad))
     {
@@ -181,7 +200,7 @@ boolean inicializaConfiguracion(boolean debug)
 
   return parseaConfiguracionGlobal(cad);
   }
-
+*/
 /*********************************************/
 /* Parsea el json leido del fichero de       */
 /* configuracio global                       */
@@ -189,7 +208,7 @@ boolean inicializaConfiguracion(boolean debug)
     auto high = obj.get<int>("high");
     auto low = obj.get<int>("low");
     auto text = obj.get<char*>("text");
- *********************************************/
+ *********************************************
 boolean parseaConfiguracionGlobal(String contenido)
   {  
   DynamicJsonBuffer jsonBuffer;
@@ -198,16 +217,19 @@ boolean parseaConfiguracionGlobal(String contenido)
   if (json.success()) 
     {
     Traza.mensaje("parsed json\n");
-//******************************Parte especifica del json a leer********************************
-    if (json.containsKey("nombre_dispositivo")) configuracion.nombre_dispositivo=((const char *)json["nombre_dispositivo"]);    
-    if(configuracion.nombre_dispositivo==NULL) configuracion.nombre_dispositivo=String(NOMBRE_FAMILIA);
+// ******************************Parte especifica del json a leer********************************
+//    if (json.containsKey("nombre_dispositivo")) configuracion.nombre_dispositivo=((const char *)json["nombre_dispositivo"]);    
+//    if(configuracion.nombre_dispositivo==NULL) configuracion.nombre_dispositivo=String(NOMBRE_FAMILIA);
+    if (json.containsKey("nombre_dispositivo")) strcpy(configuracion.nombre_dispositivo,(const char *)json["nombre_dispositivo"]);
+    if(configuracion.nombre_dispositivo==NULL) strcpy(configuracion.nombre_dispositivo,NOMBRE_FAMILIA);
     
-    Traza.mensaje("Configuracion leida:\nNombre dispositivo: %s\n",configuracion.nombre_dispositivo.c_str());
-//************************************************************************************************
+    Traza.mensaje("Configuracion leida:\nNombre dispositivo: %s\n",configuracion.nombre_dispositivo);
+// ************************************************************************************************
     return true;
     }
   return false;  
   }
+  */
 /********************************** Funciones de configuracion global **************************************/
 /********************************** Utilidades **************************************/
 /*********************************************************************/
@@ -279,3 +301,19 @@ const char* reset_reason(RESET_REASON reason)
   }
 }
 /********************************** Utilidades **************************************/
+void inicializaDetector(boolean debug){pinMode(PIN_DETECTOR, INPUT);}
+
+boolean modoDetector(boolean debug){
+  if(digitalRead(PIN_DETECTOR)==DETECTOR_ACTIVADO) return true;
+  return false;
+}
+
+boolean setParticionProximoArranque(String nombre)
+  {
+  esp_partition_iterator_t iterador=esp_partition_find(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_ANY,nombre.c_str()); 
+  const esp_partition_t *particion=esp_partition_get(iterador);
+  esp_partition_iterator_release(iterador);  
+
+  if(esp_ota_set_boot_partition(particion)==ESP_OK) return true;
+  return false;
+  }

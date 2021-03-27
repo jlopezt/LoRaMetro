@@ -17,9 +17,9 @@
 /***************************** Includes *****************************/
 
 //Defines de pines de los captadores
-static const uint8_t ONE_WIRE_BUS = 7; //Pin donde esta el DS18B20
-static const uint8_t DHTPIN = 6; //Pin de datos del DTH22
-static const uint8_t LDR_PIN = 0; //Pin de la LDR para medir luz
+static const uint8_t ONE_WIRE_BUS = 17; //Pin donde esta el DS18B20
+static const uint8_t DHTPIN = 22; //Pin de datos del DTH22
+static const uint8_t LDR_PIN = 13; //Pin de la LDR para medir luz
 
 class Sensores{
     private:
@@ -60,6 +60,11 @@ class Sensores{
         void leePresionBME280(void);
         /********************************* Fin funciones de lectura *********************************/
         
+        float promediaTemperatura(void);
+        float promediaHumedad(void);
+        float promediaPresion(void);
+        float promediaLuz(void);
+
         //////PARA DEPURACION  
         void setTemp(float f) {tempC=f;}
         void setHum(float f) {humedad=f;}
@@ -69,8 +74,8 @@ class Sensores{
 
     public:
         Sensores(uint8_t _dth_pin, uint8_t _one_wire_pin);
-        boolean inicializa(boolean debug);
-        void lee(boolean debug);
+        boolean inicializa(boolean configFichero);
+        void lee(void);
 
         /********************************* funciones get *********************************/
         float getTemperatura(void);  //encapsula el acceso a la temperatura

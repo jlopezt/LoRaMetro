@@ -22,9 +22,21 @@
 /***************************** Defines *****************************/
 
 /***************************** Includes *****************************/
+#include <Global.h>
 #include <Sensores.h>
 #include <Ficheros.h>
 /***************************** Includes *****************************/
+
+/******************* Variables ***********************/
+struct datos_s{
+  float temperatura;
+  float presion;
+  float humedad;
+  float luz;
+};
+RTC_DATA_ATTR struct datos_s datos[LECTURAS_POR_ENVIO];
+RTC_DATA_ATTR int16_t indice=0;
+
 Sensores sensores(DHTPIN,ONE_WIRE_BUS);
 
 Sensores::Sensores(uint8_t _dth_pin, uint8_t _one_wire_pin):
@@ -43,55 +55,74 @@ Sensores::Sensores(uint8_t _dth_pin, uint8_t _one_wire_pin):
     presion=-1;
     altitud=-1;
 }
+/******************* Variables ***********************/
 
-boolean Sensores::inicializa(boolean debug) {
+boolean Sensores::inicializa(boolean configFichero) {
+/*
   //recupero datos del fichero de configuracion
   String cad="";
-  if (debug) Serial.println("Recupero configuracion de archivo...");
+  if (configFichero){
+     Serial.println("Recupero configuracion de archivo...");
   
-  if(leeFichero(SENSORES_CONFIG_FILE, cad)){
-    if (!parseaConfiguracion(cad)) {
-      //Algo salio mal, confgiguracion por defecto
+    if(leeFichero(SENSORES_CONFIG_FILE, cad)){
+      if (!parseaConfiguracion(cad)) {
+        //Algo salio mal, confgiguracion por defecto
+        Serial.printf("No existe fichero de configuracion de Sensores o esta corrupto\n");
+        return false;
+      }
+    }
+    else{
       Serial.printf("No existe fichero de configuracion de Sensores o esta corrupto\n");
       return false;
     }
   }
-  else{
-    Serial.printf("No existe fichero de configuracion de Sensores o esta corrupto\n");
-    return false;
-  }
 
+  //Cargo en las variable locales con lo leido del fichero en el primer aranque
+
+  tipoSensorTemperatura=String(configuracion.tipoSensorTemperatura);
+  tipoSensorHumedad=String(configuracion.tipoSensorHumedad);
+  tipoSensorPresion=String(configuracion.tipoSensorPresion);
+  tipoSensorLuz=String(configuracion.tipoSensorLuz);
+  */
+  tipoSensorTemperatura=configuracion.getTipoSensorTemperatura();
+  tipoSensorHumedad=configuracion.getTipoSensorHumedad();
+  tipoSensorPresion=configuracion.getTipoSensorPresion();
+  tipoSensorLuz=configuracion.getTipoSensorLuz();
 
   //Inicializo los sensores ¿TODOS?
   //Temperatura
+  Serial.printf("Inicializa temperatura...\n");
   if(tipoSensorTemperatura==TIPO_NULO);
-  else if(tipoSensorHumedad==TIPO_DHT22  ) dht.begin();                           //Temperatura y Humedad DHT22
+  else if(tipoSensorHumedad==TIPO_DHT22) dht.begin();                             //Temperatura y Humedad DHT22
   else if(tipoSensorTemperatura==TIPO_HDC1080) hdc1080.begin(HDC_DIRECCION_I2C);  //I2C Temperatura y Humedad HDC1080
   else if(tipoSensorTemperatura==TIPO_DS18B20) DS18B20.begin();                   //Temperatura Dallas DS18B20
   else if(tipoSensorTemperatura==TIPO_BME280) bme280.begin(BME280_DIRECCION_I2C); //Temperatura bme280
   //Humedad
+  Serial.printf("Inicializa humedad...\n");  
   if(tipoSensorHumedad==TIPO_NULO);
-  else if(tipoSensorHumedad==TIPO_HDC1080) hdc1080.begin(HDC_DIRECCION_I2C); //I2C Temperatura y Humedad HDC1080
   else if(tipoSensorHumedad==TIPO_DHT22  ) dht.begin();                      //Humedad DHT22
+  else if(tipoSensorHumedad==TIPO_HDC1080) hdc1080.begin(HDC_DIRECCION_I2C); //I2C Temperatura y Humedad HDC1080
   else if(tipoSensorHumedad==TIPO_BME280) bme280.begin(BME280_DIRECCION_I2C); //Humedad bme280
   //Luz
   //No es necesaria la inicialización
+  Serial.printf("Inicializa luz...\n");  
   if(tipoSensorLuz==TIPO_NULO);
   else if(tipoSensorLuz==TIPO_GL5539); //LDR, no se inicializa. Lectura analogica
   else if(tipoSensorLuz==TIPO_BH1750) bh1750.begin(BH1750::CONTINUOUS_LOW_RES_MODE ); //I2C luz bh1750
   //Presion
+  Serial.printf("Inicializa presion...\n");
   if(tipoSensorPresion==TIPO_NULO);
   else if(tipoSensorPresion==TIPO_BME280) bme280.begin(BME280_DIRECCION_I2C); //Humedad bme280
   //Altitud
-  //No es necesaria la inicialización, si hay es porque hay presion
-  
+  //No es necesaria la inicialización, si hay es porque hay presion  
+  Serial.printf("Fin de la inicailzacion de los sensores\n");  
   return true;
 }
     
 /*********************************************/
 /* Parsea el json leido del fichero de       */
 /* configuracio de sensores                  */
-/*********************************************/
+/*********************************************
 boolean Sensores::parseaConfiguracion(String contenido)
   {  
   DynamicJsonBuffer jsonBuffer;
@@ -100,30 +131,54 @@ boolean Sensores::parseaConfiguracion(String contenido)
   if (json.success()) 
     {
     Serial.println("parsed json");
-//******************************Parte especifica del json a leer********************************
-    tipoSensorTemperatura=json.get<String>("tipoSensorTemperatura");
-    tipoSensorHumedad=json.get<String>("tipoSensorHumedad");
-    tipoSensorLuz=json.get<String>("tipoSensorLuz");
-    tipoSensorPresion=json.get<String>("tipoSensorPresion");
+    String cad="";
+// ******************************Parte especifica del json a leer********************************
+    if (json.containsKey("tipoSensorTemperatura")){
+      Serial.println("Temperatura\n");
+      cad=json.get<String>("tipoSensorTemperatura");
+      strncpy(configuracion.tipoSensorTemperatura,cad.c_str(),LONG_TIPO_SENSOR_TEMPERATURA-1);
+    }
+    else configuracion.tipoSensorTemperatura[0]=0;
+
+    if (json.containsKey("tipoSensorHumedad")){
+      Serial.println("Humedad\n");
+      cad=json.get<String>("tipoSensorHumedad");
+      strncpy(configuracion.tipoSensorHumedad,cad.c_str(),LONG_TIPO_SENSOR_HUMEDAD-1);
+    }
+    else configuracion.tipoSensorHumedad[0]=0;
+
+    if (json.containsKey("tipoSensorPresion")){
+      Serial.println("Presion\n");
+      cad=json.get<String>("tipoSensorPresion");
+      strncpy( configuracion.tipoSensorPresion,cad.c_str(),LONG_TIPO_SENSOR_PRESION-1);
+    }
+    else configuracion.tipoSensorPresion[0]=0;
+
+    if (json.containsKey("tipoSensorLuz")){
+      Serial.println("Luz\n");
+      cad=json.get<String>("tipoSensorLuz");
+      strncpy(configuracion.tipoSensorLuz,cad.c_str(),LONG_TIPO_SENSOR_LUZ-1);
+    }
+    else configuracion.tipoSensorLuz[0]=0;
 
     Serial.printf("Configuracion leida:\ntipo sensor temperatura: %s\ntipo sensor humedad: %s\ntipo sensor luz: %s\ntipo sensor presion: %s\n",tipoSensorTemperatura.c_str(),tipoSensorHumedad.c_str(),tipoSensorLuz.c_str(),tipoSensorPresion.c_str());
-//************************************************************************************************
+// ************************************************************************************************
     return true;
     }
   return false;
   }
-
+*/
 /*********************************************** Lectura de las medidas de los sensores *****************************************************/
 /**************************************/
 /* Lee los sensores                   */
 /* y almnacena el valor leido         */
 /**************************************/
-void Sensores::lee(boolean debug)
+void Sensores::lee(void)
   { 
   //Leo los sensores  
   //Temperatura
   if(tipoSensorTemperatura==TIPO_NULO);
-  else if(tipoSensorHumedad==TIPO_DHT22  ) leeTemperaturaDHT22();       //Humedad DHT22
+  else if(tipoSensorHumedad==TIPO_DHT22) leeTemperaturaDHT22();       //Humedad DHT22
   else if(tipoSensorTemperatura==TIPO_HDC1080) leeTemperaturaHDC1080(); //I2C Temperatura HDC1080
   else if(tipoSensorTemperatura==TIPO_DS18B20) leeTemperaturaDS18B20(); //Temperatura Dallas DS18B20
   else if(tipoSensorTemperatura==TIPO_BME280 ) leeTemperaturaBME280(); //Temperatura BME280
@@ -140,7 +195,14 @@ void Sensores::lee(boolean debug)
   if(tipoSensorPresion==TIPO_NULO);
   else if(tipoSensorPresion==TIPO_BME280) leePresionBME280(); //I2C Temperatura y Humedad HDC1080
 
-  if(debug)Serial.printf("T: %s; H: %s, L: %s\n",getTemperaturaString().c_str(),getHumedadString().c_str(),getLuzString().c_str());
+  datos[indice].temperatura=getTemperatura();
+  datos[indice].humedad=getHumedad();
+  datos[indice].presion=getPresion();
+  datos[indice].luz=getLuz();
+
+  indice=(indice+1) % LECTURAS_POR_ENVIO;
+
+  Serial.printf("T: %s; H: %s, P: %s, L: %s\n",getTemperaturaString().c_str(),getHumedadString().c_str(),getPresionString().c_str(), getLuzString().c_str());
   }
 
 /********************************* funciones de lectura *********************************/
@@ -341,20 +403,49 @@ String Sensores::generaJsonEstado(void) {
   
   //genero el json con las medidas--> {"id": 1, "temperatura": 22.5, "Humedad": 63, "Luz": 12, "Presion": 1036.2, "Altitud": 645.2}
   cad = "{\"titulo\": \"";
-  cad += configuracion.nombre_dispositivo;
-  //cad += getNombre_dispositivo();
+  cad += String(configuracion.getNombre_dispositivo());
   cad += "\"";
   cad += ",\"Temperatura\": ";
-  cad += String(getTemperatura(),1);
+  cad += String(promediaTemperatura(),1);
   cad += ",\"Humedad\": ";
-  cad += String(getHumedad(),1);
+  cad += String(promediaHumedad(),1);
   cad += ",\"Luz\": ";
-  cad += String(getLuz(),1);
-  cad += ",\"Altitud\": ";
-  cad += String(getAltitud(),1);   
+  cad += String(promediaLuz(),1);
   cad += ",\"Presion\": ";
-  cad += String(getPresion(),1);
+  cad += String(promediaPresion(),1);
   cad += "}";  
 
   return cad;
+}
+
+float Sensores::promediaTemperatura(void){
+  float promedio=0;
+  for(uint8_t medida=0; medida<LECTURAS_POR_ENVIO;medida++){
+    promedio+=datos[medida].temperatura;
+  }
+  return promedio/LECTURAS_POR_ENVIO;
+}
+
+float Sensores::promediaHumedad(void){
+  float promedio=0;
+  for(uint8_t medida=0; medida<LECTURAS_POR_ENVIO;medida++){
+    promedio+=datos[medida].humedad;
+  }
+  return promedio/LECTURAS_POR_ENVIO;
+}
+
+float Sensores::promediaPresion(void){
+  float promedio=0;
+  for(uint8_t medida=0; medida<LECTURAS_POR_ENVIO;medida++){
+    promedio+=datos[medida].presion;
+  }
+  return promedio/LECTURAS_POR_ENVIO;
+}
+
+float Sensores::promediaLuz(void){
+  float promedio=0;
+  for(uint8_t medida=0; medida<LECTURAS_POR_ENVIO;medida++){
+    promedio+=datos[medida].luz;
+  }
+  return promedio/LECTURAS_POR_ENVIO;
 }

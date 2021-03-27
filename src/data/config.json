@@ -1,3 +1,9 @@
 {
-	"nombre_dispositivo": "LoRAMetro"
+	"nombre_dispositivo": "LoRAMetro",
+	"xtipoSensorTemperatura": "HDC1080", 
+	"tipoSensorTemperatura": "DS18B20", 
+	"xtipoSensorHumedad": "HDC1080",
+	"tipoSensorHumedad": "DHT22",
+	"xtipoSensorLuz": "BH1750",
+	"tipoSensorLuz": "GL5539"	
 }

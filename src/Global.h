@@ -9,8 +9,8 @@
 #define _GLOBAL_
 
 //Defines generales
-#define NOMBRE_FAMILIA   "LoRaMetro"
-#define VERSION          "Heltec wifi lora 32 - ver 0.0.1"
+//#define NOMBRE_FAMILIA   "LoRaMetro"
+#define VERSION          "Heltec wifi lora 32 - ver 0.3.0"
 
 #define TRUE              1
 #define FALSE             0
@@ -26,35 +26,39 @@
 #define SENSORES_CONFIG_FILE       "/SensoresConfig.json"
 #define SENSORES_CONFIG_BAK_FILE   "/SensoresConfig.json.bak"
 
-#define MAX_DATOS       24      // MAximo numero de datos almacenados
+//Longitud de los tipos de sensores
+#define LONG_TIPO_SENSOR_TEMPERATURA 12
+#define LONG_TIPO_SENSOR_HUMEDAD     12
+#define LONG_TIPO_SENSOR_PRESION     12
+#define LONG_TIPO_SENSOR_LUZ         12
 /***************************** Defines *****************************/
 
 /***************************** Includes *****************************/
 #include <Arduino.h>
 #include <Traza.h>
 #include <ArduinoJson.h>
+#include <Configuracion.h>
 /***************************** Includes *****************************/
 
-/***************************** Tipos *****************************/
-typedef struct {
-  String nombre_dispositivo;    
-} configuracion_t;
-
-typedef struct {
-  float temperatura;
-  float presion;
-  float humedad;
-} datos_t;
-/***************************** Tipos *****************************/
-
 /***************************** Variables *****************************/
-//extern String nombre_dispositivo;//Nombre del dispositivo, por defecto el de la familia
+const char NOMBRE_FAMILIA[]="LoRaMetro";
+
+const uint32_t LECTURAS_AL_DIA = 24*60*4;  //Cuantas veces me despierto para leer al dia. Ej: 24*12 es una vez cada 5 min
+const uint8_t LECTURAS_POR_ENVIO = 4;  //Cada cuantas medidas hago un envio
+
+/*
+struct configuracion_s{
+  char nombre_dispositivo[16];  
+  char tipoSensorTemperatura[LONG_TIPO_SENSOR_TEMPERATURA];
+  char tipoSensorHumedad[LONG_TIPO_SENSOR_HUMEDAD];
+  char tipoSensorPresion[LONG_TIPO_SENSOR_PRESION];
+  char tipoSensorLuz[LONG_TIPO_SENSOR_LUZ];
+};
+extern struct configuracion_s configuracion;
+*/
+
 extern int debugGlobal; //por defecto desabilitado
 extern int nivelActivo;
-
-extern int bootCount; //RTC_DATA_ATTR memoria que se mantiene activa durante un deep_sleep
-extern datos_t datos[MAX_DATOS];
-extern configuracion_t configuracion;
 /***************************** Variables *****************************/
 
 /************************* Utilidades ***************************/
