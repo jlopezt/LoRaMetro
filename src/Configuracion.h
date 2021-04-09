@@ -27,10 +27,14 @@ class Configuracion{
         boolean valida;
         
         String nombre_dispositivo;
+
         String tipoSensorTemperatura;
         String tipoSensorHumedad;
         String tipoSensorPresion;
         String tipoSensorLuz;
+
+        //uint32_t seqnoUp; //No uso esto, uso los de la struct
+        //uint32_t seqnoDn; //No uso esto, uso los de la struct
         
         boolean debug=true;
 
@@ -46,6 +50,12 @@ class Configuracion{
         String getTipoSensorHumedad(void);
         String getTipoSensorPresion(void);
         String getTipoSensorLuz(void);
+        uint32_t getSeqnoUp(void);
+        uint32_t getSeqnoDn(void);
+
+        //metodos set
+        void setSeqnoUp(uint32_t);
+        void setSeqnoDn(uint32_t);
 };
 
 extern Configuracion configuracion;

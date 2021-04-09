@@ -9,11 +9,13 @@
 
 /***************************** Variables *****************************/
 struct configuracion_s{
-  char nombre_dispositivo[16];  
+  char nombre_dispositivo[16];
   char tipoSensorTemperatura[LONG_TIPO_SENSOR_TEMPERATURA];
   char tipoSensorHumedad[LONG_TIPO_SENSOR_HUMEDAD];
   char tipoSensorPresion[LONG_TIPO_SENSOR_PRESION];
   char tipoSensorLuz[LONG_TIPO_SENSOR_LUZ];
+  uint32_t seqnoUp;
+  uint32_t seqnoDn;
 };
 RTC_DATA_ATTR struct configuracion_s config;
 
@@ -44,10 +46,17 @@ boolean Configuracion::leeConfiguracion(boolean leerDeFichero){
   //recupero de memoria persistente a los miembros de la clase
   if (debug) Traza.mensaje("Recupero configuracion de la memoria persisitente...\n");
   nombre_dispositivo=String(config.nombre_dispositivo);
+
   tipoSensorTemperatura=String(config.tipoSensorTemperatura);
   tipoSensorHumedad=String(config.tipoSensorHumedad);
   tipoSensorPresion=String(config.tipoSensorPresion);
   tipoSensorLuz=String(config.tipoSensorLuz);
+
+  //seqnoUp=config.seqnoUp;
+  //seqnoDn=config.seqnoDn;
+
+  //Serial.printf("tipoSensorTemperatura: %s\ntipoSensorHumedad: %s\ntipoSensorPresion: %s\ntipoSensorLuz: %s\n",tipoSensorTemperatura.c_str(),tipoSensorHumedad.c_str(),tipoSensorPresion.c_str(),tipoSensorLuz.c_str());
+  Serial.printf("seqnoUp: %i\nseqnoDn: %i\n",config.seqnoUp,config.seqnoDn);
   valida=true;
 
   return valida;
@@ -116,27 +125,41 @@ boolean Configuracion::parseaConfiguracion(String contenido)
 
 /*************************FUNCIONES GET************************************/
 String Configuracion::getNombreDispositivo(void){
-    if(valida) return String(nombre_dispositivo);
-    return String("Invalida");
+  if(valida) return String(nombre_dispositivo);
+  return String("Invalida");
 }
 
 String Configuracion::getTipoSensorTemperatura(void){
-    if(valida) return String(tipoSensorTemperatura);
-    return String("Invalida");
+  if(valida) return String(tipoSensorTemperatura);
+  return String("Invalida");
 }
 
 String Configuracion::getTipoSensorHumedad(void){
-    if(valida) return String(tipoSensorHumedad);
-    return String("Invalida");
+  if(valida) return String(tipoSensorHumedad);
+  return String("Invalida");
 }
 
 String Configuracion::getTipoSensorPresion(void){
-    if(valida) return String(tipoSensorPresion);
-    return String("Invalida");
+  if(valida) return String(tipoSensorPresion);
+  return String("Invalida");
 }
 
 String Configuracion::getTipoSensorLuz(void){
-    if(valida) return String(tipoSensorLuz);
-    return String("Invalida");
+  if(valida) return String(tipoSensorLuz);
+  return String("Invalida");
+}
+
+uint32_t Configuracion::getSeqnoUp(void){
+  if(valida) return config.seqnoUp;
+  return 0;
+}
+
+uint32_t Configuracion::getSeqnoDn(void){
+  if(valida) return config.seqnoDn;
+  return 0;
 }
 /*************************FUNCIONES GET************************************/
+/*************************FUNCIONES SET************************************/
+void Configuracion::setSeqnoUp(uint32_t valor){config.seqnoUp=valor;}
+void Configuracion::setSeqnoDn(uint32_t valor){config.seqnoDn=valor;}
+/*************************FUNCIONES SET************************************/        

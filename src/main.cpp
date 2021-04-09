@@ -6,8 +6,8 @@
 *************************************************************************************************/
 
 /***************************** Defines *****************************/
-#define NUM_CORES       2       /* numero de cores */
-#define PIN_DETECTOR   23       /* Pin que determina si arranca en modo cargador o en modo normal */
+#define NUM_CORES         2       /* numero de cores */
+#define PIN_DETECTOR      23       /* Pin que determina si arranca en modo cargador o en modo normal */
 #define DETECTOR_ACTIVADO LOW
 #define PARTICION_LOADER  String("app0")
 /***************************** Defines *****************************/
@@ -17,6 +17,8 @@
 #include <esp_timer.h>
 #include <rom/rtc.h>
 #include <esp_ota_ops.h>
+
+#include <lmic.h>
 
 #include <Global.h>
 #include <Configuracion.h>
@@ -183,21 +185,71 @@ void setup() {
     String cad=sensores.generaJsonEstado();
 
     //4.-comunica
-    Serial.printf("%s\n",cad.c_str());
-    Lora.envia(cad);
+    Serial.printf("Datos a enviar: %s\n",cad.c_str());
+    //Serial.printf("Inicio: %lld\n",esp_timer_get_time());
+    Serial.printf("Resultado del envio: %i\n",Lora.envia(cad));
+    //Serial.printf("Fin: %lld\n",esp_timer_get_time());
+
+    uint16_t vueltas=0;
+
+    Serial.printf("\n[");
+    do{
+      Lora.loop();  
+      delay(10);
+      if(vueltas%10==0) Serial.printf(".");
+      if(vueltas++>1000) break;
+    }while(Lora.getOnAir());
+    Serial.printf("]\n");
 
     //5.-procesa respuesta
-    //To Do....
+    //To Do en al funcion onEvent()
   }
-  else{Serial.printf("No hay envio (bootCount: %i | LECTURAS_POR_ENVIO: %i)\n",bootCount,LECTURAS_POR_ENVIO);}
+  else{Serial.printf("No hay envio (bootCount: %i | LECTURAS_POR_ENVIO: %i)\n",bootCount++,LECTURAS_POR_ENVIO);}
 
-  //6.-duerme
-  Serial.printf("milis fin: %lu ms\ntimeToSleep: %lld us\ntiempo consumido: %lld us",millis(),timeToSleep,timeToSleep-esp_timer_get_time());    
-
+  Serial.print(F("Vamos a dormir un rato\n\n\n\n"));
   esp_deep_sleep(timeToSleep-esp_timer_get_time());
-
-  Serial.println("This will never be printed");  
+  Serial.println("Esta linea nunca se ejecutara, nunca se vera esto en el monitor serie\n");  
 }
 
-void loop() {}
+void loop() {
+  /*************************************************/
+  /*************************************************/
+  /** Si se va a dormir en el setup no llega aqui **/ 
+  /*************************************************/
+  /*************************************************/
+  //2.-mide
+  sensores.lee();
 
+  if(bootCount % LECTURAS_POR_ENVIO==0){
+    bootCount=0;//Aqui es cero porque el siguiente arranque lo pondra a uno. Lo inicializo a 1 en el setupTotal, porque es ya el primer arranque
+    //3.-procesa la medida
+    String cad=sensores.generaJsonEstado();
+
+    //4.-comunica
+    //Serial.printf("Datos a enviar: %s\n",cad.c_str());
+    //Serial.printf("Inicio: %lld\n",esp_timer_get_time());
+    //Serial.printf("Resultado del envio: %i\n",Lora.envia(cad));
+    //Serial.printf("Fin: %lld\n",esp_timer_get_time());
+
+    uint16_t vueltas=0;
+
+    Serial.printf("\n[");
+    do{
+      Lora.loop();  
+      delay(10);
+      if(vueltas%10==0) Serial.printf(".");
+      if(vueltas++>1000) break;
+    }while(Lora.getOnAir());
+    Serial.printf("]\n");
+
+    //5.-procesa respuesta
+    //To Do en al funcion onEvent()
+  }
+  else{Serial.printf("No hay envio (bootCount: %i | LECTURAS_POR_ENVIO: %i)\n",bootCount++,LECTURAS_POR_ENVIO);}
+
+  uint16_t vueltas=0;
+  do{
+    Lora.loop();
+    delay(40);//Espero un tiempo, equivalente a irme a dormir
+  }while (vueltas++<1000);
+}

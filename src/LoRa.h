@@ -18,6 +18,7 @@ class EmisorLora{
     uint8_t appskey[sizeof(APPSKEY)];
     uint8_t nwkskey[sizeof(NWKSKEY)];
     String mensaje;  
+    boolean onAir;
     
     public:
     uint16_t setMensaje(String m);
@@ -27,6 +28,9 @@ class EmisorLora{
     lmic_tx_error_t envia(String msg);
     void finaliza(void);
     void reset(void);
+    void loop(void);
+    void setOnAir(boolean flag){onAir=flag;}
+    boolean getOnAir(void){return onAir;}
 };
 
 extern EmisorLora Lora;

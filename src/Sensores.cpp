@@ -66,31 +66,31 @@ boolean Sensores::inicializa(boolean configFichero) {
 
   //Inicializo los sensores
   //Temperatura
-  Serial.printf("Inicializa temperatura...\n");
+  //Serial.printf("Inicializa temperatura...\n");
   if(tipoSensorTemperatura==TIPO_NULO);
   else if(tipoSensorHumedad==TIPO_DHT22) dht.begin();                             //Temperatura y Humedad DHT22
   else if(tipoSensorTemperatura==TIPO_HDC1080) hdc1080.begin(HDC_DIRECCION_I2C);  //I2C Temperatura y Humedad HDC1080
   else if(tipoSensorTemperatura==TIPO_DS18B20) DS18B20.begin();                   //Temperatura Dallas DS18B20
   else if(tipoSensorTemperatura==TIPO_BME280) bme280.begin(BME280_DIRECCION_I2C); //Temperatura bme280
   //Humedad
-  Serial.printf("Inicializa humedad...\n");  
+  //Serial.printf("Inicializa humedad...\n");  
   if(tipoSensorHumedad==TIPO_NULO);
   else if(tipoSensorHumedad==TIPO_DHT22  ) dht.begin();                      //Humedad DHT22
   else if(tipoSensorHumedad==TIPO_HDC1080) hdc1080.begin(HDC_DIRECCION_I2C); //I2C Temperatura y Humedad HDC1080
   else if(tipoSensorHumedad==TIPO_BME280) bme280.begin(BME280_DIRECCION_I2C); //Humedad bme280
   //Luz
   //No es necesaria la inicialización
-  Serial.printf("Inicializa luz...\n");  
+  //Serial.printf("Inicializa luz...\n");  
   if(tipoSensorLuz==TIPO_NULO);
   else if(tipoSensorLuz==TIPO_GL5539); //LDR, no se inicializa. Lectura analogica
   else if(tipoSensorLuz==TIPO_BH1750) bh1750.begin(BH1750::CONTINUOUS_LOW_RES_MODE ); //I2C luz bh1750
   //Presion
-  Serial.printf("Inicializa presion...\n");
+  //Serial.printf("Inicializa presion...\n");
   if(tipoSensorPresion==TIPO_NULO);
   else if(tipoSensorPresion==TIPO_BME280) bme280.begin(BME280_DIRECCION_I2C); //Humedad bme280
   //Altitud
   //No es necesaria la inicialización, si hay es porque hay presion  
-  Serial.printf("Fin de la inicailzacion de los sensores\n");  
+  //Serial.printf("Fin de la inicailzacion de los sensores\n");  
   return true;
 }
     
@@ -127,7 +127,7 @@ void Sensores::lee(void)
 
   indice=(indice+1) % LECTURAS_POR_ENVIO;
 
-  Serial.printf("T: %s; H: %s, P: %s, L: %s\n",getTemperaturaString().c_str(),getHumedadString().c_str(),getPresionString().c_str(), getLuzString().c_str());
+  //Serial.printf("T: %s; H: %s, P: %s, L: %s\n",getTemperaturaString().c_str(),getHumedadString().c_str(),getPresionString().c_str(), getLuzString().c_str());
   }
 
 /********************************* funciones de lectura *********************************/
