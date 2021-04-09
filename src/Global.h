@@ -40,7 +40,7 @@
 const char NOMBRE_FAMILIA[]="LoRaMetro";
 
 const uint32_t LECTURAS_AL_DIA = 24*60*4;  //Cuantas veces me despierto para leer al dia. Ej: 24*12 es una vez cada 5 min
-const uint8_t LECTURAS_POR_ENVIO = 4;  //Cada cuantas medidas hago un envio
+const uint8_t LECTURAS_POR_ENVIO = 1;  //Cada cuantas medidas hago un envio
 /***************************** Variables *****************************/
 
 /************************* Utilidades ***************************/
