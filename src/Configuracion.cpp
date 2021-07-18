@@ -10,10 +10,14 @@
 /***************************** Variables *****************************/
 struct configuracion_s{
   char nombre_dispositivo[16];
-  char tipoSensorTemperatura[LONG_TIPO_SENSOR_TEMPERATURA];
+  char tipoSensorTemperaturaAire[LONG_TIPO_SENSOR_TEMPERATURA];
   char tipoSensorHumedad[LONG_TIPO_SENSOR_HUMEDAD];
   char tipoSensorPresion[LONG_TIPO_SENSOR_PRESION];
   char tipoSensorLuz[LONG_TIPO_SENSOR_LUZ];
+  char tipoSensorAltitud[LONG_TIPO_SENSOR_ALTITUD];
+  char tipoSensorTemperaturaSuelo[LONG_TIPO_SENSOR_TEMPERATURA];
+  char tipoSensorHumedadSuelo[LONG_TIPO_SENSOR_HUMEDADSUELO];
+
   uint32_t seqnoUp;
   uint32_t seqnoDn;
 };
@@ -47,15 +51,18 @@ boolean Configuracion::leeConfiguracion(boolean leerDeFichero){
   if (debug) Traza.mensaje("Recupero configuracion de la memoria persisitente...\n");
   nombre_dispositivo=String(config.nombre_dispositivo);
 
-  tipoSensorTemperatura=String(config.tipoSensorTemperatura);
+  tipoSensorTemperaturaAire=String(config.tipoSensorTemperaturaAire);
   tipoSensorHumedad=String(config.tipoSensorHumedad);
   tipoSensorPresion=String(config.tipoSensorPresion);
   tipoSensorLuz=String(config.tipoSensorLuz);
+  tipoSensorAltitud=String(config.tipoSensorAltitud);
+  tipoSensorTemperaturaSuelo=String(config.tipoSensorTemperaturaSuelo);
+  tipoSensorHumedadSuelo=String(config.tipoSensorHumedadSuelo);
 
   //seqnoUp=config.seqnoUp;
   //seqnoDn=config.seqnoDn;
 
-  //Serial.printf("tipoSensorTemperatura: %s\ntipoSensorHumedad: %s\ntipoSensorPresion: %s\ntipoSensorLuz: %s\n",tipoSensorTemperatura.c_str(),tipoSensorHumedad.c_str(),tipoSensorPresion.c_str(),tipoSensorLuz.c_str());
+  Serial.printf("tipoSensorTemperaturaAire: %s\ntipoSensorHumedad: %s\ntipoSensorPresion: %s\ntipoSensorLuz: %s\ntipoSensorAltitud: %s\ntipoSensorTemperaturaSuelo: %s\ntipoSensorHumedadSuelo: %s\n",tipoSensorTemperaturaAire.c_str(),tipoSensorHumedad.c_str(),tipoSensorPresion.c_str(),tipoSensorLuz.c_str(),tipoSensorAltitud.c_str(),tipoSensorTemperaturaSuelo.c_str(),tipoSensorHumedadSuelo.c_str());
   Serial.printf("seqnoUp: %i\nseqnoDn: %i\n",config.seqnoUp,config.seqnoDn);
   valida=true;
 
@@ -87,12 +94,12 @@ boolean Configuracion::parseaConfiguracion(String contenido)
 //******************************Configuracion de sensores********************************
     String cad="";
 
-    if (json.containsKey("tipoSensorTemperatura")){
-      cad=json.get<String>("tipoSensorTemperatura");
+    if (json.containsKey("tipoSensorTemperaturaAire")){
+      cad=json.get<String>("tipoSensorTemperaturaAire");
       //Serial.printf("Temperatura: %s\n",cad.c_str());
-      strncpy(config.tipoSensorTemperatura,cad.c_str(),LONG_TIPO_SENSOR_TEMPERATURA-1);
+      strncpy(config.tipoSensorTemperaturaAire,cad.c_str(),LONG_TIPO_SENSOR_TEMPERATURA-1);
     }
-    else config.tipoSensorTemperatura[0]=0;
+    else config.tipoSensorTemperaturaAire[0]=0;
 
     if (json.containsKey("tipoSensorHumedad")){
       cad=json.get<String>("tipoSensorHumedad");
@@ -115,7 +122,28 @@ boolean Configuracion::parseaConfiguracion(String contenido)
     }
     else config.tipoSensorLuz[0]=0;
 
-    Serial.printf("Configuracion leida:\ntipo sensor temperatura: %s\ntipo sensor humedad: %s\ntipo sensor luz: %s\ntipo sensor presion: %s\n", config.tipoSensorTemperatura, config.tipoSensorHumedad, config.tipoSensorLuz, config.tipoSensorPresion);
+    if (json.containsKey("tipoSensorAltitud")){
+      cad=json.get<String>("tipoSensorAltitud");
+      //Serial.printf("Altitud: %s\n",cad.c_str());
+      strncpy(config.tipoSensorAltitud,cad.c_str(),LONG_TIPO_SENSOR_ALTITUD-1);
+    }
+    else config.tipoSensorAltitud[0]=0;
+
+    if (json.containsKey("tipoSensorTemperaturaSuelo")){
+      cad=json.get<String>("tipoSensorTemperaturaSuelo");
+      //Serial.printf("Temperatura: %s\n",cad.c_str());
+      strncpy(config.tipoSensorTemperaturaSuelo,cad.c_str(),LONG_TIPO_SENSOR_TEMPERATURA-1);
+    }
+    else config.tipoSensorTemperaturaAire[0]=0;
+
+    if (json.containsKey("tipoSensorHumedadSuelo")){
+      cad=json.get<String>("tipoSensorHumedadSuelo");
+      //Serial.printf("HumedadSuelo: %s\n",cad.c_str());
+      strncpy(config.tipoSensorHumedadSuelo,cad.c_str(),LONG_TIPO_SENSOR_HUMEDADSUELO-1);
+    }
+    else config.tipoSensorHumedadSuelo[0]=0;
+
+    Serial.printf("tipo sensor temperatura aire: %s\ntipo sensor humedad: %s\ntipo sensor luz: %s\ntipo sensor presion: %s\ntipo sensor altitud: %s\ntipo sensor temperatura suelo: %s\ntipo sensor humedad del suelo: %s\n", config.tipoSensorTemperaturaAire, config.tipoSensorHumedad, config.tipoSensorLuz, config.tipoSensorPresion, config.tipoSensorAltitud, config.tipoSensorTemperaturaSuelo, config.tipoSensorHumedadSuelo);
 //************************************************************************************************
     return true;
     }
@@ -129,8 +157,8 @@ String Configuracion::getNombreDispositivo(void){
   return String("Invalida");
 }
 
-String Configuracion::getTipoSensorTemperatura(void){
-  if(valida) return String(tipoSensorTemperatura);
+String Configuracion::getTipoSensorTemperaturaAire(void){
+  if(valida) return String(tipoSensorTemperaturaAire);
   return String("Invalida");
 }
 
@@ -146,6 +174,21 @@ String Configuracion::getTipoSensorPresion(void){
 
 String Configuracion::getTipoSensorLuz(void){
   if(valida) return String(tipoSensorLuz);
+  return String("Invalida");
+}
+
+String Configuracion::getTipoSensorAltitud(void){
+  if(valida) return String(tipoSensorAltitud);
+  return String("Invalida");
+}
+
+String Configuracion::getTipoSensorTemperaturaSuelo(void){
+  if(valida) return String(tipoSensorTemperaturaSuelo);
+  return String("Invalida");
+}
+
+String Configuracion::getTipoSensorHumedadSuelo(void){
+  if(valida) return String(tipoSensorHumedadSuelo);
   return String("Invalida");
 }
 

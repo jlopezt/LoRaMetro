@@ -9,7 +9,7 @@
 #define NUM_CORES         2       /* numero de cores */
 #define PIN_DETECTOR      23       /* Pin que determina si arranca en modo cargador o en modo normal */
 #define DETECTOR_ACTIVADO LOW
-#define PARTICION_LOADER  String("app0")
+#define PARTICION_LOADER  String("Loader")
 /***************************** Defines *****************************/
 
 /***************************** Includes *****************************/
@@ -155,6 +155,7 @@ boolean primerArranque(void){
 }
 
 void inicializa(boolean deFichero){
+
   //Init configuracion
   configuracion.leeConfiguracion(deFichero);  
   //Init sensonica
@@ -206,17 +207,19 @@ void setup() {
   }
   else{Serial.printf("No hay envio (bootCount: %i | LECTURAS_POR_ENVIO: %i)\n",bootCount++,LECTURAS_POR_ENVIO);}
 
+
   Serial.print(F("Vamos a dormir un rato\n\n\n\n"));
   esp_deep_sleep(timeToSleep-esp_timer_get_time());
   Serial.println("Esta linea nunca se ejecutara, nunca se vera esto en el monitor serie\n");  
 }
 
 void loop() {
-  /*************************************************/
-  /*************************************************/
-  /** Si se va a dormir en el setup no llega aqui **/ 
-  /*************************************************/
-  /*************************************************/
+  //+++++++++++++++++++++++++++++++++++++++++++++++++
+  //+++++++++++++++++++++++++++++++++++++++++++++++++
+  //++ Si se va a dormir en el setup no llega aqui ++ 
+  //+++++++++++++++++++++++++++++++++++++++++++++++++
+  //+++++++++++++++++++++++++++++++++++++++++++++++++
+  /*
   //2.-mide
   sensores.lee();
 
@@ -252,4 +255,5 @@ void loop() {
     Lora.loop();
     delay(40);//Espero un tiempo, equivalente a irme a dormir
   }while (vueltas++<1000);
+  */
 }

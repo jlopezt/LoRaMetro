@@ -9,10 +9,12 @@
 #define _CONFIGURACION_
 
 //Longitud de los tipos de sensores
-#define LONG_TIPO_SENSOR_TEMPERATURA 12
-#define LONG_TIPO_SENSOR_HUMEDAD     12
-#define LONG_TIPO_SENSOR_PRESION     12
-#define LONG_TIPO_SENSOR_LUZ         12
+#define LONG_TIPO_SENSOR_TEMPERATURA  12
+#define LONG_TIPO_SENSOR_HUMEDAD      12
+#define LONG_TIPO_SENSOR_PRESION      12
+#define LONG_TIPO_SENSOR_LUZ          12
+#define LONG_TIPO_SENSOR_ALTITUD      12
+#define LONG_TIPO_SENSOR_HUMEDADSUELO 15
 /***************************** Defines *****************************/
 
 /***************************** Includes *****************************/
@@ -28,10 +30,13 @@ class Configuracion{
         
         String nombre_dispositivo;
 
-        String tipoSensorTemperatura;
+        String tipoSensorTemperaturaAire;
         String tipoSensorHumedad;
         String tipoSensorPresion;
         String tipoSensorLuz;
+        String tipoSensorAltitud;
+        String tipoSensorTemperaturaSuelo;
+        String tipoSensorHumedadSuelo;
 
         //uint32_t seqnoUp; //No uso esto, uso los de la struct
         //uint32_t seqnoDn; //No uso esto, uso los de la struct
@@ -46,10 +51,13 @@ class Configuracion{
         boolean leeConfiguracion(boolean fichero);
         //metodos get
         String getNombreDispositivo(void);
-        String getTipoSensorTemperatura(void);
+        String getTipoSensorTemperaturaAire(void);
         String getTipoSensorHumedad(void);
         String getTipoSensorPresion(void);
         String getTipoSensorLuz(void);
+        String getTipoSensorAltitud(void);
+        String getTipoSensorTemperaturaSuelo(void);
+        String getTipoSensorHumedadSuelo(void);
         uint32_t getSeqnoUp(void);
         uint32_t getSeqnoDn(void);
 
