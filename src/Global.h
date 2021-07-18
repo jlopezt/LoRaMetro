@@ -9,7 +9,7 @@
 #define _GLOBAL_
 
 //Defines generales
-#define VERSION          "LoRaMetro - ver 1.0.0"
+#define VERSION          "LoRaMetro - ver 1.1.0"
 
 #define TRUE              1
 #define FALSE             0

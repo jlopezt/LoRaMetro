@@ -15,6 +15,7 @@
                 "c:/Users/jlopezt/Documents/PlatformIO/Projects/LoRaMetro/lib/OneWire",
                 "c:/Users/jlopezt/Documents/PlatformIO/Projects/LoRaMetro/lib/ClosedCube_HDC1080_Arduino/src",
                 "c:/Users/jlopezt/Documents/PlatformIO/Projects/LoRaMetro/lib/BH1750",
+                "c:/Users/jlopezt/Documents/PlatformIO/Projects/LoRaMetro/lib/Adafruit_BMP280_Library",
                 "c:/Users/jlopezt/Documents/PlatformIO/Projects/LoRaMetro/lib/Adafruit_BME280_Library",
                 "C:/Users/jlopezt/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
                 "c:/Users/jlopezt/Documents/PlatformIO/Projects/LoRaMetro/lib/Adafruit_Sensor",
@@ -125,6 +126,7 @@
                     "c:/Users/jlopezt/Documents/PlatformIO/Projects/LoRaMetro/lib/OneWire",
                     "c:/Users/jlopezt/Documents/PlatformIO/Projects/LoRaMetro/lib/ClosedCube_HDC1080_Arduino/src",
                     "c:/Users/jlopezt/Documents/PlatformIO/Projects/LoRaMetro/lib/BH1750",
+                    "c:/Users/jlopezt/Documents/PlatformIO/Projects/LoRaMetro/lib/Adafruit_BMP280_Library",
                     "c:/Users/jlopezt/Documents/PlatformIO/Projects/LoRaMetro/lib/Adafruit_BME280_Library",
                     "C:/Users/jlopezt/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
                     "c:/Users/jlopezt/Documents/PlatformIO/Projects/LoRaMetro/lib/Adafruit_Sensor",
@@ -242,7 +244,7 @@
             ],
             "cStandard": "c99",
             "cppStandard": "c++11",
-            "compilerPath": "C:/Users/jlopezt/.platformio/packages/toolchain-xtensa32/bin/xtensa-esp32-elf-gcc.exe",
+            "compilerPath": "C:/Users/jlopezt/.platformio/packages/toolchain-xtensa32@2.50200.97/bin/xtensa-esp32-elf-gcc.exe",
             "compilerArgs": [
                 "-mlongcalls",
                 ""
